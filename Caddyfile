@@ -1,0 +1,4 @@
+catatduit.localhost, localhost {
+	tls internal
+	reverse_proxy web:5173
+}
