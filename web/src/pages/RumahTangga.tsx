@@ -3,8 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { InviteSheet } from '../components/InviteSheet';
 import { useAuth } from '../lib/auth';
+import { ApiError } from '../lib/api';
 import { shortDate } from '../lib/format';
-import { useInvites, useMembers, useSwitchHousehold } from '../lib/household';
+import { useInvites, useMembers, useRemoveMember, useRevokeInvite, useSwitchHousehold } from '../lib/household';
 import { useOutbox } from '../lib/offline';
 import type { InviteStatus, MemberRole } from '../lib/types';
 
@@ -26,11 +27,30 @@ export function RumahTanggaPage() {
   const invites = useInvites(isOwner);
   const outbox = useOutbox();
   const switchHousehold = useSwitchHousehold();
+  const revoke = useRevokeInvite();
+  const removeMember = useRemoveMember();
   const [inviting, setInviting] = useState(false);
 
   const pending = invites.data?.filter((i) => i.status === 'PENDING') ?? [];
   const history = invites.data?.filter((i) => i.status !== 'PENDING') ?? [];
   const others = me?.households.filter((h) => h.id !== me.household.id) ?? [];
+  const actionError = revoke.error ?? removeMember.error;
+
+  function onRevoke(id: string, email: string) {
+    if (!window.confirm(`Cabut undangan untuk ${email}? Tautannya langsung tidak berlaku.`)) return;
+    revoke.mutate(id);
+  }
+
+  function onRemove(id: string, name: string) {
+    if (
+      !window.confirm(
+        `Keluarkan ${name} dari ${me?.household.name}? Catatan yang pernah dibuatnya tetap tersimpan, tapi ia tidak bisa lagi membuka data rumah tangga ini.`,
+      )
+    ) {
+      return;
+    }
+    removeMember.mutate(id);
+  }
 
   function move(householdId: string, name: string) {
     if (outbox.length > 0 && !window.confirm(`${outbox.length} catatan belum tersinkron akan dibuang jika pindah sekarang. Tetap pindah ke ${name}?`)) {
@@ -75,6 +95,17 @@ export function RumahTanggaPage() {
               <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${m.role === 'OWNER' ? 'bg-primary-soft text-primary-strong' : 'bg-chip text-muted'}`}>
                 {ROLE_LABEL[m.role]}
               </span>
+              {isOwner && m.id !== me?.user.id && m.role !== 'OWNER' && (
+                <button
+                  type="button"
+                  onClick={() => onRemove(m.id, m.name)}
+                  disabled={removeMember.isPending}
+                  aria-label={`Keluarkan ${m.name}`}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-chip text-[#8A2A24] disabled:opacity-50"
+                >
+                  <Icon name="trash" size={16} />
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -103,6 +134,15 @@ export function RumahTanggaPage() {
                 <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${STATUS_LABEL[inv.status].className}`}>
                   {STATUS_LABEL[inv.status].text}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => onRevoke(inv.id, inv.email)}
+                  disabled={revoke.isPending}
+                  aria-label={`Cabut undangan ${inv.email}`}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-chip text-[#8A2A24] disabled:opacity-50"
+                >
+                  <Icon name="trash" size={16} />
+                </button>
               </div>
             ))}
             {history.length > 0 && (
@@ -166,6 +206,12 @@ export function RumahTanggaPage() {
       {switchHousehold.isError && (
         <p role="alert" className="rounded-[18px] bg-[#FDE6E4] px-4 py-3 text-sm text-[#8A2A24]">
           Tidak bisa pindah rumah tangga. Coba lagi.
+        </p>
+      )}
+
+      {actionError && (
+        <p role="alert" className="rounded-[18px] bg-[#FDE6E4] px-4 py-3 text-sm text-[#8A2A24]">
+          {actionError instanceof ApiError ? actionError.message : 'Aksi tidak bisa diselesaikan. Coba lagi.'}
         </p>
       )}
 
