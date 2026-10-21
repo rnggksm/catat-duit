@@ -121,8 +121,8 @@ export function TransactionForm({ initial, onDeleted }: { initial?: TransactionF
   const total = evaluate(expr);
   const hasOp = /[+-]/.test(expr);
   const root = sorted.find((c) => c.id === rootId) ?? null;
-  const visible = showAll ? sorted : sorted.slice(0, 7);
-  const grid = root && !visible.includes(root) ? [...visible.slice(0, 6), root] : visible;
+  const visible = showAll ? sorted : sorted.slice(0, 4);
+  const grid = root && !visible.includes(root) ? [...visible.slice(0, 3), root] : visible;
   const chips = (suggestions.data ?? []).filter((s) => s.note.toLowerCase() !== note.trim().toLowerCase()).slice(0, 4);
 
   function pickCategory(c: Category) {
@@ -195,13 +195,16 @@ export function TransactionForm({ initial, onDeleted }: { initial?: TransactionF
   }
 
   return (
-    <main className="relative flex min-h-screen-safe flex-col gap-3.5 bg-card px-5 pb-6 pt-4">
+    <main className="relative flex h-screen-safe flex-col bg-card px-5 pt-4">
       {/* Latar putih ikut naik ke area status bar supaya tidak ada pita warna halaman di atas form. */}
       <div
         aria-hidden
         className="absolute inset-x-0 bg-card"
         style={{ top: 'calc(var(--safe-top) * -1)', height: 'var(--safe-top)' }}
       />
+      {/* Area gulir terpisah: form di sini boleh menggulir, numpad di bawah tidak ikut dan
+          tidak pernah menutupi isi form. */}
+      <div className="flex grow flex-col gap-3.5 overflow-y-auto overscroll-contain pb-1">
       <header className="flex items-center justify-between">
         <button
           type="button"
@@ -239,7 +242,7 @@ export function TransactionForm({ initial, onDeleted }: { initial?: TransactionF
       <section className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between">
           <span className="text-[13px] font-semibold text-muted">Kategori</span>
-          {sorted.length > 7 && (
+          {sorted.length > 4 && (
             <button type="button" onClick={() => setShowAll((v) => !v)} className="py-1 text-[13px] font-semibold text-primary">
               {showAll ? 'Lebih sedikit' : `Semua kategori (${sorted.length})`}
             </button>
@@ -273,12 +276,14 @@ export function TransactionForm({ initial, onDeleted }: { initial?: TransactionF
               </button>
             );
           })}
-          <button type="button" aria-label="Tambah kategori baru" onClick={() => setSheetOpen(true)} className="flex flex-col items-center gap-1.5 py-1 text-primary-strong">
-            <span className="flex h-[52px] w-[52px] items-center justify-center rounded-[18px] border-2 border-dashed border-[#B9ADEF] bg-[#F4F1FF]">
-              <Icon name="plus" strokeWidth={2.2} />
-            </span>
-            <span className="text-xs font-bold">Baru</span>
-          </button>
+          {showAll && (
+            <button type="button" aria-label="Tambah kategori baru" onClick={() => setSheetOpen(true)} className="flex flex-col items-center gap-1.5 py-1 text-primary-strong">
+              <span className="flex h-[52px] w-[52px] items-center justify-center rounded-[18px] border-2 border-dashed border-[#B9ADEF] bg-[#F4F1FF]">
+                <Icon name="plus" strokeWidth={2.2} />
+              </span>
+              <span className="text-xs font-bold">Baru</span>
+            </button>
+          )}
         </div>
         {root && root.children.length > 0 && (
           <div className="flex gap-1.5 overflow-x-auto pb-1" role="group" aria-label={`Sub-kategori ${root.name}`}>
@@ -372,8 +377,14 @@ export function TransactionForm({ initial, onDeleted }: { initial?: TransactionF
           {error}
         </p>
       )}
+      </div>
 
-      <div className="mt-auto grid grid-cols-4 gap-2">
+      {/* Numpad selalu terlihat di bawah, tidak ikut menggulir bersama form. Padding bawah
+          memakai safe area supaya baris terakhir tidak tertimpa home indicator. */}
+      <div
+        className="grid shrink-0 grid-cols-4 gap-2 pt-2"
+        style={{ paddingBottom: 'max(16px, var(--safe-bottom))' }}
+      >
         {KEYS.map((k) => {
           const op = k === '+' || k === '-';
           return (

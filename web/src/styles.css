@@ -67,6 +67,11 @@ body {
   min-height: calc(100dvh - var(--safe-top));
 }
 
+/* Tinggi pasti satu layar, dipakai layar yang memisahkan area gulir dari footer tetap. */
+.h-screen-safe {
+  height: calc(100dvh - var(--safe-top));
+}
+
 button {
   cursor: pointer;
 }
