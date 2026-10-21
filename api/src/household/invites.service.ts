@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CreateInviteDto } from './household.dto';
@@ -135,5 +135,24 @@ export class InvitesService {
       acceptedAt: row.acceptedAt,
       acceptedByName: row.acceptedBy?.name ?? null,
     }));
+  }
+
+  /**
+   * Cabut undangan yang belum dipakai. Idempoten: mencabut dua kali tetap 200, supaya
+   * tombol yang terklik ganda tidak memunculkan error.
+   */
+  async revoke(householdId: string, id: string) {
+    const invite = await this.prisma.householdInvite.findFirst({
+      where: { id, householdId },
+      select: { id: true, acceptedAt: true, revokedAt: true },
+    });
+    if (!invite) throw new NotFoundException('Undangan tidak ditemukan');
+    if (invite.acceptedAt) {
+      throw new ConflictException('Undangan ini sudah dipakai. Keluarkan anggota lewat daftar anggota.');
+    }
+    if (!invite.revokedAt) {
+      await this.prisma.householdInvite.update({ where: { id: invite.id }, data: { revokedAt: new Date() } });
+    }
+    return { id: invite.id, status: 'REVOKED' as InviteStatus };
   }
 }

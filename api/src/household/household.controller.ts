@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard, AuthUser, CurrentUser } from '../auth/auth.guard';
 import { Roles, RolesGuard } from '../auth/roles.guard';
 import { CreateInviteDto } from './household.dto';
@@ -23,5 +23,11 @@ export class HouseholdController {
   @Roles('OWNER')
   listInvites(@CurrentUser() user: AuthUser) {
     return this.invites.list(user.householdId);
+  }
+
+  @Delete('invites/:id')
+  @Roles('OWNER')
+  revokeInvite(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
+    return this.invites.revoke(user.householdId, id);
   }
 }
