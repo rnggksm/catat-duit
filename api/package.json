@@ -9,7 +9,8 @@
     "dev:docker": "prisma generate && prisma migrate deploy && nest start --watch",
     "migrate": "prisma migrate dev",
     "seed": "prisma db seed",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "node test/e2e-invite.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
