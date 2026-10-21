@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module';
 import { BudgetsModule } from './budgets/budgets.module';
 import { CategoriesModule } from './categories/categories.module';
 import { HealthController } from './health.controller';
+import { HouseholdModule } from './household/household.module';
 import { InsightsModule } from './insights/insights.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ReportsModule } from './reports/reports.module';
@@ -26,6 +27,7 @@ import { WalletsModule } from './wallets/wallets.module';
     ReportsModule,
     InsightsModule,
     BudgetsModule,
+    HouseholdModule,
   ],
   controllers: [HealthController],
 })
