@@ -53,6 +53,7 @@ model Household {
   transactions Transaction[]
   insights     Insight[]
   budgets      Budget[]
+  invites      HouseholdInvite[]
 
   @@map("households")
 }
@@ -67,6 +68,8 @@ model User {
   memberships   HouseholdMember[]
   refreshTokens RefreshToken[]
   transactions  Transaction[]
+  invitesSent   HouseholdInvite[] @relation("InviteSent")
+  invitesUsed   HouseholdInvite[] @relation("InviteUsed")
 
   @@map("users")
 }
@@ -213,4 +216,32 @@ model Budget {
   @@unique([householdId, subjectKey, effectiveFrom])
   @@index([householdId, effectiveFrom])
   @@map("budgets")
+}
+
+/// Undangan bergabung ke household (Fase 2). Token mentah hanya dikirim sekali lewat tautan;
+/// yang disimpan hanya hash SHA-256, sama seperti RefreshToken.
+///
+/// Status tidak disimpan sebagai kolom: diturunkan dari `acceptedAt`, `revokedAt`, dan
+/// `expiresAt` supaya tidak ada dua sumber kebenaran yang bisa berbeda.
+model HouseholdInvite {
+  id           String     @id @default(uuid()) @db.Uuid
+  householdId  String     @map("household_id") @db.Uuid
+  /// Email tujuan, huruf kecil. Undangan terikat email agar tautan yang tersebar tidak bisa dipakai orang lain.
+  email        String
+  tokenHash    String     @unique @map("token_hash")
+  role         MemberRole @default(MEMBER)
+  invitedById  String     @map("invited_by") @db.Uuid
+  expiresAt    DateTime   @map("expires_at")
+  acceptedAt   DateTime?  @map("accepted_at")
+  acceptedById String?    @map("accepted_by") @db.Uuid
+  revokedAt    DateTime?  @map("revoked_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  household  Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  invitedBy  User      @relation("InviteSent", fields: [invitedById], references: [id], onDelete: Restrict)
+  acceptedBy User?     @relation("InviteUsed", fields: [acceptedById], references: [id], onDelete: SetNull)
+
+  @@index([householdId, createdAt])
+  @@index([householdId, email])
+  @@map("household_invites")
 }
