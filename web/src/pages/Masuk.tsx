@@ -130,7 +130,7 @@ export function MasukPage() {
 
       <p className="mt-auto flex items-center justify-center gap-2 text-center text-xs text-muted">
         <Icon name="lock" size={16} />
-        Datamu hanya bisa dilihat olehmu (dan pasangan, bila diundang).
+        Datamu hanya bisa dilihat olehmu dan anggota rumah tangga yang kamu undang.
       </p>
     </main>
   );
