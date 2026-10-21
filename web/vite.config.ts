@@ -28,6 +28,10 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Rute aplikasi harus tetap dilayani index.html oleh service worker supaya tautan
+        // undangan (/undang/<token>) yang dibuka dari WhatsApp sampai ke router React walau
+        // aplikasi sudah terpasang sebagai PWA. Hanya /api/ yang dikecualikan — jangan
+        // menambahkan /undang ke daftar ini, halaman itu justru butuh fallback tersebut.
         navigateFallbackDenylist: [/^\/api\//],
         // Data terakhir (kategori, dompet, ringkasan, riwayat) tetap tampil saat offline.
         runtimeCaching: [
