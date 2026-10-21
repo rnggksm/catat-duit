@@ -1,6 +1,8 @@
-import { Controller, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '../auth/auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { AuthGuard, AuthUser, CurrentUser } from '../auth/auth.guard';
+import { Roles, RolesGuard } from '../auth/roles.guard';
+import { CreateInviteDto } from './household.dto';
+import { InvitesService } from './invites.service';
 
 /**
  * Pengelolaan household: anggota dan undangan.
@@ -8,4 +10,12 @@ import { RolesGuard } from '../auth/roles.guard';
  */
 @Controller('household')
 @UseGuards(AuthGuard, RolesGuard)
-export class HouseholdController {}
+export class HouseholdController {
+  constructor(private readonly invites: InvitesService) {}
+
+  @Post('invites')
+  @Roles('OWNER')
+  createInvite(@CurrentUser() user: AuthUser, @Body() dto: CreateInviteDto) {
+    return this.invites.create(user.householdId, user.userId, dto);
+  }
+}

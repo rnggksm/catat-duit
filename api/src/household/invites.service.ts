@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { createHash, randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import type { CreateInviteDto } from './household.dto';
 
 /** Status undangan. Diturunkan dari kolom waktu, tidak disimpan di DB. */
 export type InviteStatus = 'PENDING' | 'ACCEPTED' | 'REVOKED' | 'EXPIRED';
@@ -52,4 +53,54 @@ export function inviteStatus(invite: {
 @Injectable()
 export class InvitesService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Buat undangan untuk satu email. Mengembalikan tautan berisi token mentah — satu-satunya
+   * kesempatan token itu terlihat; setelah ini hanya hash-nya yang tersimpan.
+   *
+   * Undangan lama untuk email yang sama dicabut dalam transaksi yang sama sehingga selalu
+   * hanya ada satu tautan hidup per orang.
+   */
+  async create(householdId: string, userId: string, dto: CreateInviteDto) {
+    const email = dto.email.trim().toLowerCase();
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + inviteTtlMs());
+
+    const registered = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true, memberships: { where: { householdId }, select: { userId: true } } },
+    });
+    if (registered?.memberships.length) {
+      throw new ConflictException('Email ini sudah menjadi anggota rumah tangga ini');
+    }
+    if (registered) {
+      // Menggabungkan akun yang sudah punya rumah tangga sendiri butuh alur pindah-household
+      // (pemilihan household aktif di token) yang belum ada. Ditolak terang-terangan daripada
+      // membuat tautan yang tidak bisa dipakai.
+      throw new ConflictException(
+        'Email ini sudah punya akun Catat Duit. Menggabungkan akun lama belum didukung — undang dengan email lain.',
+      );
+    }
+
+    const token = newInviteToken();
+    const invite = await this.prisma.$transaction(async (tx) => {
+      await tx.householdInvite.updateMany({
+        where: { householdId, email, acceptedAt: null, revokedAt: null },
+        data: { revokedAt: now },
+      });
+      return tx.householdInvite.create({
+        data: {
+          householdId,
+          email,
+          tokenHash: hashToken(token),
+          role: 'MEMBER',
+          invitedById: userId,
+          expiresAt,
+        },
+        select: { id: true, email: true, role: true, expiresAt: true, createdAt: true },
+      });
+    });
+
+    return { ...invite, status: 'PENDING' as InviteStatus, url: buildInviteUrl(token) };
+  }
 }
