@@ -155,4 +155,37 @@ export class InvitesService {
     }
     return { id: invite.id, status: 'REVOKED' as InviteStatus };
   }
+
+  /**
+   * Pratinjau undangan untuk halaman `/undang/:token`, tanpa login.
+   *
+   * Sengaja hanya membuka nama rumah tangga, nama pengundang, email tujuan yang disamarkan,
+   * dan status. Tidak ada id household maupun data keuangan, karena siapa pun yang memegang
+   * tautan bisa memanggil endpoint ini.
+   */
+  async preview(token: string) {
+    // Token asli selalu 32 byte hex. Tolak bentuk lain sebelum menyentuh DB.
+    if (!/^[0-9a-f]{64}$/.test(token)) throw new NotFoundException('Undangan tidak ditemukan');
+
+    const invite = await this.prisma.householdInvite.findUnique({
+      where: { tokenHash: hashToken(token) },
+      select: {
+        email: true,
+        expiresAt: true,
+        acceptedAt: true,
+        revokedAt: true,
+        household: { select: { name: true } },
+        invitedBy: { select: { name: true } },
+      },
+    });
+    if (!invite) throw new NotFoundException('Undangan tidak ditemukan');
+
+    return {
+      status: inviteStatus(invite),
+      householdName: invite.household.name,
+      invitedByName: invite.invitedBy.name,
+      email: maskEmail(invite.email),
+      expiresAt: invite.expiresAt,
+    };
+  }
 }
