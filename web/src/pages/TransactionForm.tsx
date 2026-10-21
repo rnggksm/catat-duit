@@ -310,14 +310,14 @@ export function TransactionForm({ initial, onDeleted }: { initial?: TransactionF
         )}
       </section>
 
-      <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Dompet">
+      <div className="flex flex-wrap gap-2 pb-1" role="group" aria-label="Dompet">
         {wallets.data?.map((w) => (
           <button
             key={w.id}
             type="button"
             aria-pressed={w.id === walletId}
             onClick={() => setWalletId(w.id)}
-            className={`flex h-10 shrink-0 items-center gap-1.5 rounded-[14px] border px-3 text-[13px] font-semibold ${
+            className={`flex h-10 shrink-0 items-center gap-1 whitespace-nowrap rounded-[14px] border px-2.5 text-[13px] font-semibold ${
               w.id === walletId ? 'border-primary bg-primary-soft text-primary-strong' : 'border-line bg-card'
             }`}
           >
