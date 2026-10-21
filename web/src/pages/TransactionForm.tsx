@@ -195,7 +195,13 @@ export function TransactionForm({ initial, onDeleted }: { initial?: TransactionF
   }
 
   return (
-    <main className="flex min-h-dvh flex-col gap-3.5 bg-card px-5 pb-6 pt-4">
+    <main className="relative flex min-h-screen-safe flex-col gap-3.5 bg-card px-5 pb-6 pt-4">
+      {/* Latar putih ikut naik ke area status bar supaya tidak ada pita warna halaman di atas form. */}
+      <div
+        aria-hidden
+        className="absolute inset-x-0 bg-card"
+        style={{ top: 'calc(var(--safe-top) * -1)', height: 'var(--safe-top)' }}
+      />
       <header className="flex items-center justify-between">
         <button
           type="button"

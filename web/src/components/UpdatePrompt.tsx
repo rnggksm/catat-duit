@@ -12,7 +12,8 @@ export function UpdatePrompt() {
   return (
     <div
       role="status"
-      className="fixed inset-x-4 top-4 z-30 mx-auto flex max-w-[440px] items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-sm text-white shadow-lg"
+      className="fixed inset-x-4 z-30 mx-auto flex max-w-[440px] items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-sm text-white shadow-lg"
+      style={{ top: 'calc(var(--safe-top) + 1rem)' }}
     >
       <span className="grow">Versi baru tersedia.</span>
       <button type="button" onClick={() => setNeedRefresh(false)} className="min-h-11 px-2 text-night-muted">

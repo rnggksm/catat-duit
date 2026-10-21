@@ -11,11 +11,11 @@ const tabs = [
 
 export function BottomNav() {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-[480px] pb-[env(safe-area-inset-bottom)]">
-      <nav
-        aria-label="Navigasi utama"
-        className="grid h-[78px] grid-cols-5 items-start border-t border-line bg-card px-1.5 pt-2"
-      >
+    // Latar dan garis atas dipasang di pembungkus, bukan di <nav>: padding bawah untuk home
+    // indicator ada di sini, jadi kalau latarnya hanya di <nav> area itu menampilkan warna
+    // halaman dan bar navigasi terlihat mengambang di atas pita krem.
+    <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-[480px] border-t border-line bg-card pb-[var(--safe-bottom)]">
+      <nav aria-label="Navigasi utama" className="grid h-[78px] grid-cols-5 items-start px-1.5 pt-2">
         {tabs.map((t) =>
           t ? (
             <NavLink

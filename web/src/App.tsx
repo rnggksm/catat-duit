@@ -20,7 +20,7 @@ import { UndangPage } from './pages/Undang';
 
 function Splash() {
   return (
-    <div className="flex min-h-dvh items-center justify-center">
+    <div className="flex min-h-screen-safe items-center justify-center">
       <span className="font-display text-xl font-bold text-muted">Catat Duit</span>
     </div>
   );

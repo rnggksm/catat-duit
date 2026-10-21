@@ -35,6 +35,20 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/*
+ * Tinggi area status bar / notch. `viewport-fit=cover` + `black-translucent` di index.html
+ * membuat iOS menggambar konten sampai ke bawah status bar, jadi tanpa inset ini judul halaman
+ * bertabrakan dengan jam dan indikator baterai. Nilainya 0 di desktop, di Android, dan di
+ * Safari biasa; hanya terisi saat aplikasi berjalan standalone di iPhone.
+ *
+ * Disimpan sebagai custom property supaya bisa ditimpa dari DevTools saat menguji tampilan
+ * iPhone — `env()` sendiri tidak bisa diemulasikan.
+ */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 body {
   margin: 0;
   min-height: 100dvh;
@@ -44,7 +58,13 @@ body {
   max-width: 480px;
   margin: 0 auto;
   min-height: 100dvh;
+  padding-top: var(--safe-top);
   position: relative;
+}
+
+/* Halaman layar penuh: kurangi tingginya dengan inset atas agar tidak muncul scroll palsu. */
+.min-h-screen-safe {
+  min-height: calc(100dvh - var(--safe-top));
 }
 
 button {

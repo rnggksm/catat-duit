@@ -36,7 +36,7 @@ export function MasukPage() {
     'h-[52px] w-full rounded-2xl border-[1.5px] border-line bg-card px-4 text-[15px] text-ink outline-none focus:border-primary focus:shadow-[0_0_0_4px_var(--color-primary-soft)]';
 
   return (
-    <main className="relative flex min-h-dvh flex-col gap-6 overflow-hidden px-6 pb-7 pt-12">
+    <main className="relative flex min-h-screen-safe flex-col gap-6 overflow-hidden px-6 pb-7 pt-12">
       <div aria-hidden className="absolute -right-16 -top-12 h-44 w-44 rounded-full bg-primary-soft" />
       <div className="relative flex h-[60px] w-[60px] items-center justify-center rounded-[20px] bg-primary text-white">
         <Icon name="wallet" size={30} />

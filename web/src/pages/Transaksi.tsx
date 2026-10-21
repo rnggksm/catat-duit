@@ -30,7 +30,7 @@ export function TransaksiPage() {
 
   const notFound = pending?.kind === 'delete' || server.isError;
   return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-3 px-6 text-center">
+    <main className="flex min-h-screen-safe flex-col items-center justify-center gap-3 px-6 text-center">
       <p className="text-sm text-muted">{notFound ? 'Transaksi tidak ditemukan atau sudah dihapus.' : 'Memuat transaksi…'}</p>
       {notFound && (
         <Link to="/riwayat" className="text-sm font-semibold text-primary">

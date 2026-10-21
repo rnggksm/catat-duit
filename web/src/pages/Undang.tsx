@@ -86,7 +86,7 @@ export function UndangPage() {
   const dead = data && data.status !== 'PENDING' ? STATUS_COPY[data.status] : null;
 
   return (
-    <main className="relative flex min-h-dvh flex-col gap-5 overflow-hidden px-6 pb-8 pt-12">
+    <main className="relative flex min-h-screen-safe flex-col gap-5 overflow-hidden px-6 pb-8 pt-12">
       <div aria-hidden className="absolute -right-14 -top-10 h-40 w-40 rounded-full bg-primary-soft" />
       <div className="relative flex h-[60px] w-[60px] items-center justify-center rounded-[20px] bg-primary text-white">
         <Icon name="users" size={30} />
