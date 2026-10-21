@@ -13,6 +13,7 @@ import { LainnyaPage } from './pages/Lainnya';
 import { LaporanPage } from './pages/Laporan';
 import { MasukPage } from './pages/Masuk';
 import { RiwayatPage } from './pages/Riwayat';
+import { RumahTanggaPage } from './pages/RumahTangga';
 import { TransactionForm } from './pages/TransactionForm';
 import { TransaksiPage } from './pages/Transaksi';
 import { UndangPage } from './pages/Undang';
@@ -70,6 +71,7 @@ export function App() {
             <Route path="/laporan/kategori/:id" element={<KategoriLaporanPage />} />
             <Route path="/hemat" element={<HematPage />} />
             <Route path="/anggaran" element={<AnggaranPage />} />
+            <Route path="/rumah-tangga" element={<RumahTanggaPage />} />
             <Route path="/lainnya" element={<LainnyaPage />} />
           </Route>
         </Route>

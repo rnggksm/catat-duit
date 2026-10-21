@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { useAuth } from '../lib/auth';
+import { useMembers } from '../lib/household';
 import { useOutbox } from '../lib/offline';
 import { useCategories, useWallets } from '../lib/queries';
 
@@ -9,6 +10,7 @@ export function LainnyaPage() {
   const outbox = useOutbox();
   const categories = useCategories();
   const wallets = useWallets();
+  const members = useMembers();
 
   function onLogout() {
     if (
@@ -24,7 +26,6 @@ export function LainnyaPage() {
     { label: 'Periode laporan', value: `Mulai tgl ${me?.household.periodStartDay ?? 25}`, icon: 'list' },
     { label: 'Kategori', value: String(categories.data?.length ?? '–'), icon: 'grid' },
     { label: 'Dompet', value: String(wallets.data?.length ?? '–'), icon: 'wallet' },
-    { label: 'Undang pasangan', value: 'Fase 2', icon: 'users' },
   ];
 
   return (
@@ -42,6 +43,21 @@ export function LainnyaPage() {
           <span className="text-base font-bold">{me?.user.name}</span>
           <span className="text-[13px] text-muted">{me?.user.email}</span>
         </span>
+      </section>
+
+      <section className="overflow-hidden rounded-[22px] border border-line-soft bg-card">
+        <Link to="/rumah-tangga" className="flex min-h-[62px] items-center gap-3 px-4 py-2 text-ink">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary-soft text-primary">
+            <Icon name="users" size={18} />
+          </span>
+          <span className="flex grow flex-col">
+            <span className="text-[15px] font-semibold">Rumah tangga</span>
+            <span className="text-xs text-muted">
+              {me?.household.name} · {members.data?.length ?? '…'} anggota · undang pasangan
+            </span>
+          </span>
+          <Icon name="chevronRight" size={18} className="text-[#B3AC9F]" />
+        </Link>
       </section>
 
       <section className="overflow-hidden rounded-[22px] border border-line-soft bg-card">
