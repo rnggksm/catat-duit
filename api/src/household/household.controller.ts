@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard, AuthUser, CurrentUser } from '../auth/auth.guard';
 import { Roles, RolesGuard } from '../auth/roles.guard';
+import { RateLimit, RateLimitGuard } from '../common/rate-limit.guard';
 import { CreateInviteDto } from './household.dto';
 import { InvitesService } from './invites.service';
 import { MembersService } from './members.service';
@@ -11,7 +12,7 @@ import { MembersService } from './members.service';
  * Route baca tanpa `@Roles` sengaja terbuka untuk semua anggota.
  */
 @Controller('household')
-@UseGuards(AuthGuard, RolesGuard)
+@UseGuards(AuthGuard, RolesGuard, RateLimitGuard)
 export class HouseholdController {
   constructor(
     private readonly invites: InvitesService,
@@ -31,6 +32,7 @@ export class HouseholdController {
 
   @Post('invites')
   @Roles('OWNER')
+  @RateLimit(10, 60 * 60 * 1000)
   createInvite(@CurrentUser() user: AuthUser, @Body() dto: CreateInviteDto) {
     return this.invites.create(user.householdId, user.userId, dto);
   }
