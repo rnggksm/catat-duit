@@ -76,7 +76,13 @@ export function UndangPage() {
       await register(name, email, password, token);
       navigate('/', { replace: true });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Tidak bisa terhubung ke server.');
+      // Kasus paling sering: penerima undangan sudah punya akun. Tanpa arahan, pesan
+      // "Email sudah terdaftar" terasa seperti jalan buntu padahal tinggal masuk.
+      if (err instanceof ApiError && err.status === 409) {
+        setError('Email ini sudah terdaftar di Catat Duit. Tekan "Sudah punya akun? Masuk" di bawah — tidak perlu daftar ulang.');
+      } else {
+        setError(err instanceof ApiError ? err.message : 'Tidak bisa terhubung ke server.');
+      }
     } finally {
       setBusy(false);
     }
@@ -172,8 +178,9 @@ export function UndangPage() {
 
           {status === 'guest' && (
             <form onSubmit={signUp} className="flex flex-col gap-4" noValidate>
-              <p className="text-[13px] text-muted">
-                Buat akun dengan email yang diundang, atau masuk dulu bila sudah punya akun.
+              <p className="text-[13px] leading-relaxed text-muted">
+                Belum punya akun? Daftar dengan email yang diundang. <strong className="font-semibold text-ink">Sudah punya
+                akun Catat Duit? Masuk saja</strong> — tidak perlu daftar ulang, akun lamamu langsung bergabung.
               </p>
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="nama" className="text-[13px] font-semibold">
@@ -238,6 +245,15 @@ export function UndangPage() {
               >
                 {busy ? 'Memproses…' : 'Daftar & gabung'}
               </button>
+
+              {/* `next` membawa tautan undangan melewati halaman masuk, supaya akun lama
+                  kembali ke sini dan tinggal menekan tombol gabung. */}
+              <Link
+                to={`/masuk?next=${encodeURIComponent(`/undang/${token}`)}`}
+                className="flex h-[52px] items-center justify-center rounded-[18px] border-[1.5px] border-line text-[15px] font-bold"
+              >
+                Sudah punya akun? Masuk
+              </Link>
             </form>
           )}
 
@@ -252,11 +268,6 @@ export function UndangPage() {
       )}
 
       <div className="mt-auto flex flex-col gap-3">
-        {status === 'guest' && (
-          <Link to="/masuk" className="text-center text-[13px] font-semibold text-primary underline">
-            Sudah punya akun? Masuk dulu
-          </Link>
-        )}
         <Link to={status === 'authed' ? '/' : '/masuk'} className="text-center text-[13px] text-muted underline">
           {status === 'authed' ? 'Kembali ke beranda' : 'Nanti saja'}
         </Link>

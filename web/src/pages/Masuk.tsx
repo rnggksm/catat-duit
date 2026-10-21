@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { ApiError } from '../lib/api';
 import { useAuth } from '../lib/auth';
@@ -8,6 +8,7 @@ type Mode = 'masuk' | 'daftar';
 
 export function MasukPage() {
   const { status, login, register } = useAuth();
+  const [params] = useSearchParams();
   const [mode, setMode] = useState<Mode>('masuk');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -16,7 +17,15 @@ export function MasukPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (status === 'authed') return <Navigate to="/" replace />;
+  /**
+   * Tujuan setelah masuk. Dipakai tautan undangan (`?next=/undang/<token>`) supaya tamu yang
+   * sudah punya akun kembali ke undangannya, bukan terlempar ke beranda.
+   * Hanya path internal yang diterima — mencegah open redirect lewat `?next=https://…`.
+   */
+  const rawNext = params.get('next') ?? '/';
+  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
+
+  if (status === 'authed') return <Navigate to={next} replace />;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
