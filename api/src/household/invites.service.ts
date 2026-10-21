@@ -103,4 +103,37 @@ export class InvitesService {
 
     return { ...invite, status: 'PENDING' as InviteStatus, url: buildInviteUrl(token) };
   }
+
+  /**
+   * Daftar undangan sebuah household, terbaru dulu. Tautan mentah tidak ikut — hanya hash
+   * yang tersimpan, jadi undangan lama harus dikirim ulang lewat `create`.
+   */
+  async list(householdId: string) {
+    const rows = await this.prisma.householdInvite.findMany({
+      where: { householdId },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        expiresAt: true,
+        acceptedAt: true,
+        revokedAt: true,
+        createdAt: true,
+        acceptedBy: { select: { name: true } },
+      },
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      email: row.email,
+      role: row.role,
+      status: inviteStatus(row),
+      createdAt: row.createdAt,
+      expiresAt: row.expiresAt,
+      acceptedAt: row.acceptedAt,
+      acceptedByName: row.acceptedBy?.name ?? null,
+    }));
+  }
 }
