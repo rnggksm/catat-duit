@@ -1,8 +1,9 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard, AuthUser, CurrentUser } from '../auth/auth.guard';
+import { AuthService } from '../auth/auth.service';
 import { Roles, RolesGuard } from '../auth/roles.guard';
 import { RateLimit, RateLimitGuard } from '../common/rate-limit.guard';
-import { CreateInviteDto } from './household.dto';
+import { CreateInviteDto, SwitchHouseholdDto } from './household.dto';
 import { InvitesService } from './invites.service';
 import { MembersService } from './members.service';
 
@@ -17,7 +18,19 @@ export class HouseholdController {
   constructor(
     private readonly invites: InvitesService,
     private readonly members: MembersService,
+    private readonly auth: AuthService,
   ) {}
+
+  /**
+   * Pindah household aktif, mis. dari rumah tangga sendiri ke rumah tangga pasangan.
+   * Balikan menyertakan access token baru karena `hid` di token lama menunjuk ke tempat lain.
+   */
+  @Post('switch')
+  async switch(@CurrentUser() user: AuthUser, @Body() dto: SwitchHouseholdDto) {
+    const result = await this.members.switchActive(user.userId, dto.householdId);
+    const accessToken = await this.auth.issueAccessToken(user.userId, result.householdId);
+    return { ...result, accessToken };
+  }
 
   @Get('members')
   listMembers(@CurrentUser() user: AuthUser) {

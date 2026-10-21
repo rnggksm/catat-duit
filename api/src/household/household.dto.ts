@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, MaxLength } from 'class-validator';
+import { IsEmail, IsUUID, MaxLength } from 'class-validator';
 
 export class CreateInviteDto {
   /**
@@ -10,4 +10,9 @@ export class CreateInviteDto {
   @IsEmail({}, { message: 'Format email tidak valid' })
   @MaxLength(160, { message: 'Email terlalu panjang' })
   email: string;
+}
+
+export class SwitchHouseholdDto {
+  @IsUUID('all', { message: 'ID rumah tangga tidak valid' })
+  householdId: string;
 }

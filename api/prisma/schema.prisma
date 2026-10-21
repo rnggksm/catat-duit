@@ -54,6 +54,7 @@ model Household {
   insights     Insight[]
   budgets      Budget[]
   invites      HouseholdInvite[]
+  activeFor    User[] @relation("ActiveHousehold")
 
   @@map("households")
 }
@@ -63,6 +64,9 @@ model User {
   email        String   @unique
   passwordHash String   @map("password_hash")
   name         String
+  /// Household yang sedang aktif. Satu user bisa menjadi anggota beberapa household
+  /// (mis. ikut undangan pasangan), jadi login tidak boleh menebak dari urutan keanggotaan.
+  activeHouseholdId String?  @map("active_household_id") @db.Uuid
   createdAt    DateTime @default(now()) @map("created_at")
 
   memberships   HouseholdMember[]
@@ -70,6 +74,7 @@ model User {
   transactions  Transaction[]
   invitesSent   HouseholdInvite[] @relation("InviteSent")
   invitesUsed   HouseholdInvite[] @relation("InviteUsed")
+  activeHousehold Household?     @relation("ActiveHousehold", fields: [activeHouseholdId], references: [id], onDelete: SetNull)
 
   @@map("users")
 }

@@ -63,4 +63,21 @@ export class MembersService {
 
     return { id: targetUserId, name: target.user.name, removed: true };
   }
+
+  /**
+   * Pindahkan household aktif user. Hanya menyimpan pilihan; token akses yang baru diterbitkan
+   * oleh controller sesudahnya, karena `hid` di dalam token ikut menentukan data mana yang
+   * dibaca semua endpoint lain.
+   */
+  async switchActive(userId: string, householdId: string) {
+    const membership = await this.prisma.householdMember.findUnique({
+      where: { householdId_userId: { householdId, userId } },
+      select: { role: true, household: { select: { id: true, name: true } } },
+    });
+    if (!membership) throw new NotFoundException('Kamu bukan anggota rumah tangga itu');
+
+    await this.prisma.user.update({ where: { id: userId }, data: { activeHouseholdId: householdId } });
+
+    return { householdId, householdName: membership.household.name, role: membership.role };
+  }
 }
