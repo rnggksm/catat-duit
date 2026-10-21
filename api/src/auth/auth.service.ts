@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'node:crypto';
 import { createHouseholdWithDefaults } from '../common/household-defaults';
+import { InvitesService } from '../household/invites.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { LoginDto, RegisterDto } from './auth.dto';
 
@@ -24,6 +25,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
+    private readonly invites: InvitesService,
   ) {}
 
   async register(dto: RegisterDto): Promise<Session> {
@@ -32,16 +34,23 @@ export class AuthService {
     if (exists) throw new ConflictException('Email sudah terdaftar');
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    const { user, household } = await this.prisma.$transaction(
+    const { user, householdId } = await this.prisma.$transaction(
       async (tx) => {
         const user = await tx.user.create({ data: { email, passwordHash, name: dto.name.trim() } });
-        const household = await createHouseholdWithDefaults(tx, { userId: user.id, name: `Rumah ${user.name}` });
-        await tx.user.update({ where: { id: user.id }, data: { activeHouseholdId: household.id } });
-        return { user, household };
+
+        // Dengan token undangan: bergabung ke rumah tangga pengundang dan TIDAK membuat rumah
+        // tangga sendiri. Validasi token berjalan di dalam transaksi ini, jadi token yang tidak
+        // sah membatalkan pembuatan user sekaligus — tidak ada akun yatim tanpa rumah tangga.
+        const householdId = dto.inviteToken
+          ? (await this.invites.consume(tx, { token: dto.inviteToken, email, userId: user.id })).householdId
+          : (await createHouseholdWithDefaults(tx, { userId: user.id, name: `Rumah ${user.name}` })).id;
+
+        await tx.user.update({ where: { id: user.id }, data: { activeHouseholdId: householdId } });
+        return { user, householdId };
       },
       { timeout: 20000 },
     );
-    return this.issueSession(user.id, household.id);
+    return this.issueSession(user.id, householdId);
   }
 
   async login(dto: LoginDto): Promise<Session> {

@@ -4,12 +4,12 @@ import { RolesGuard } from '../auth/roles.guard';
 import { RateLimitGuard } from '../common/rate-limit.guard';
 import { HouseholdController } from './household.controller';
 import { InvitesController } from './invites.controller';
-import { InvitesService } from './invites.service';
+import { InvitesModule } from './invites.module';
 import { MembersService } from './members.service';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, InvitesModule],
   controllers: [HouseholdController, InvitesController],
-  providers: [InvitesService, MembersService, RolesGuard, RateLimitGuard],
+  providers: [MembersService, RolesGuard, RateLimitGuard],
 })
 export class HouseholdModule {}
