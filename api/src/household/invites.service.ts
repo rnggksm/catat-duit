@@ -1,4 +1,5 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { createHash, randomBytes } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CreateInviteDto } from './household.dto';
@@ -72,14 +73,6 @@ export class InvitesService {
     });
     if (registered?.memberships.length) {
       throw new ConflictException('Email ini sudah menjadi anggota rumah tangga ini');
-    }
-    if (registered) {
-      // Menggabungkan akun yang sudah punya rumah tangga sendiri butuh alur pindah-household
-      // (pemilihan household aktif di token) yang belum ada. Ditolak terang-terangan daripada
-      // membuat tautan yang tidak bisa dipakai.
-      throw new ConflictException(
-        'Email ini sudah punya akun Catat Duit. Menggabungkan akun lama belum didukung — undang dengan email lain.',
-      );
     }
 
     const token = newInviteToken();
@@ -187,5 +180,67 @@ export class InvitesService {
       email: maskEmail(invite.email),
       expiresAt: invite.expiresAt,
     };
+  }
+
+  /**
+   * Klaim undangan lalu daftarkan user sebagai anggota, di dalam transaksi milik pemanggil.
+   * Dipakai dua jalur: `accept` (user sudah login) dan register dengan token undangan.
+   */
+  async consume(tx: Prisma.TransactionClient, params: { token: string; email: string; userId: string }) {
+    if (!/^[0-9a-f]{64}$/.test(params.token)) throw new BadRequestException('Undangan tidak ditemukan');
+
+    const invite = await tx.householdInvite.findUnique({
+      where: { tokenHash: hashToken(params.token) },
+      select: {
+        id: true,
+        householdId: true,
+        email: true,
+        role: true,
+        expiresAt: true,
+        acceptedAt: true,
+        revokedAt: true,
+        household: { select: { name: true } },
+      },
+    });
+    if (!invite) throw new BadRequestException('Undangan tidak ditemukan');
+    if (invite.acceptedAt) throw new BadRequestException('Undangan ini sudah dipakai');
+    if (invite.revokedAt) throw new BadRequestException('Undangan ini sudah dicabut');
+    if (invite.expiresAt.getTime() <= Date.now()) throw new BadRequestException('Undangan sudah kedaluwarsa');
+    if (invite.email !== params.email.trim().toLowerCase()) {
+      throw new BadRequestException('Undangan ini ditujukan untuk alamat email lain');
+    }
+
+    const already = await tx.householdMember.findUnique({
+      where: { householdId_userId: { householdId: invite.householdId, userId: params.userId } },
+      select: { userId: true },
+    });
+    if (already) throw new ConflictException('Kamu sudah menjadi anggota rumah tangga ini');
+
+    // Klaim atomik: kalau dua permintaan memakai tautan yang sama berbarengan, hanya satu
+    // yang berhasil mengisi accepted_at; yang kalah ditolak alih-alih jadi anggota ganda.
+    const claimed = await tx.householdInvite.updateMany({
+      where: { id: invite.id, acceptedAt: null, revokedAt: null },
+      data: { acceptedAt: new Date(), acceptedById: params.userId },
+    });
+    if (claimed.count !== 1) throw new BadRequestException('Undangan ini sudah dipakai');
+
+    await tx.householdMember.create({
+      data: { householdId: invite.householdId, userId: params.userId, role: invite.role },
+    });
+
+    return { householdId: invite.householdId, householdName: invite.household.name, role: invite.role };
+  }
+
+  /**
+   * Gabung ke rumah tangga lewat tautan undangan. User harus sudah login dengan email yang
+   * diundang; household aktifnya dipindah ke rumah tangga barunya dalam transaksi yang sama.
+   */
+  async accept(userId: string, token: string) {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { email: true } });
+    return this.prisma.$transaction(async (tx) => {
+      const joined = await this.consume(tx, { token, email: user.email, userId });
+      await tx.user.update({ where: { id: userId }, data: { activeHouseholdId: joined.householdId } });
+      return joined;
+    });
   }
 }
