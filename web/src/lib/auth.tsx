@@ -10,8 +10,15 @@ interface AuthState {
   status: Status;
   me: Me | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string, inviteToken?: string) => Promise<void>;
   logout: () => Promise<void>;
+  /** Muat ulang profil + daftar rumah tangga dari server (dipakai setelah gabung/pindah). */
+  reloadMe: () => Promise<void>;
+  /**
+   * Dipanggil setelah rumah tangga aktif berubah: antrean offline dan cache data milik rumah
+   * tangga lama tidak boleh terbawa ke rumah tangga baru.
+   */
+  resetAfterHouseholdChange: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -84,8 +91,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const register = useCallback(
-    async (name: string, email: string, password: string) => {
-      const { accessToken } = await post<{ accessToken: string }>('/auth/register', { name, email, password });
+    async (name: string, email: string, password: string, inviteToken?: string) => {
+      const { accessToken } = await post<{ accessToken: string }>('/auth/register', {
+        name,
+        email,
+        password,
+        ...(inviteToken ? { inviteToken } : {}),
+      });
       setAccessToken(accessToken);
       await loadMe();
     },
@@ -102,8 +114,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('guest');
   }, []);
 
+  const reloadMe = useCallback(async () => {
+    await loadMe();
+  }, [loadMe]);
+
+  /**
+   * Rumah tangga berganti: catatan yang belum tersinkron milik rumah tangga lama akan terkirim
+   * ke rumah tangga baru bila antreannya dibiarkan, jadi dibuang lebih dulu. Cache query juga
+   * dikosongkan supaya ringkasan/riwayat tidak menampilkan data rumah tangga sebelumnya.
+   */
+  const resetAfterHouseholdChange = useCallback(async () => {
+    await db.outbox.clear();
+    queryClient.clear();
+    await loadMe();
+  }, [loadMe]);
+
   return (
-    <AuthContext.Provider value={{ status, me, login, register, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider
+      value={{ status, me, login, register, logout, reloadMe, resetAfterHouseholdChange }}
+    >
+      {children}
+    </AuthContext.Provider>
   );
 }
 

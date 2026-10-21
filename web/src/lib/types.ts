@@ -1,6 +1,59 @@
+export type MemberRole = 'OWNER' | 'MEMBER';
+
 export interface Me {
   user: { id: string; email: string; name: string };
   household: { id: string; name: string; periodStartDay: number; timezone: string };
+  /** Semua rumah tangga yang diikuti. Lebih dari satu bila pernah menerima undangan pasangan. */
+  households: { id: string; name: string; role: MemberRole }[];
+}
+
+export interface HouseholdMember {
+  id: string;
+  name: string;
+  email: string;
+  role: MemberRole;
+  joinedAt: string;
+}
+
+export type InviteStatus = 'PENDING' | 'ACCEPTED' | 'REVOKED' | 'EXPIRED';
+
+export interface HouseholdInvite {
+  id: string;
+  email: string;
+  role: MemberRole;
+  status: InviteStatus;
+  createdAt: string;
+  expiresAt: string;
+  acceptedAt: string | null;
+  acceptedByName: string | null;
+}
+
+/** Balikan pembuatan undangan: `url` hanya muncul sekali, karena yang disimpan hanya hash token. */
+export interface CreatedInvite {
+  id: string;
+  email: string;
+  role: MemberRole;
+  status: InviteStatus;
+  url: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
+/** Pratinjau publik untuk halaman /undang/:token. Email sengaja disamarkan oleh server. */
+export interface InvitePreview {
+  status: InviteStatus;
+  householdName: string;
+  invitedByName: string;
+  email: string;
+  expiresAt: string;
+}
+
+/** Balikan accept & switch: sesi harus diganti karena `hid` di token lama menunjuk rumah tangga lain. */
+export interface JoinedHousehold {
+  householdId: string;
+  householdName: string;
+  role: MemberRole;
+  accessToken: string;
 }
 
 export interface Category {

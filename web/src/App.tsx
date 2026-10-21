@@ -15,6 +15,7 @@ import { MasukPage } from './pages/Masuk';
 import { RiwayatPage } from './pages/Riwayat';
 import { TransactionForm } from './pages/TransactionForm';
 import { TransaksiPage } from './pages/Transaksi';
+import { UndangPage } from './pages/Undang';
 
 function Splash() {
   return (
@@ -57,6 +58,8 @@ export function App() {
       <UpdatePrompt />
       <Routes>
         <Route path="/masuk" element={status === 'loading' ? <Splash /> : <MasukPage />} />
+        {/* Tautan undangan dibuka dari WhatsApp, jadi harus tetap jalan tanpa login. */}
+        <Route path="/undang/:token" element={status === 'loading' ? <Splash /> : <UndangPage />} />
         <Route element={<RequireAuth />}>
           <Route path="/tambah" element={<TransactionForm />} />
           <Route path="/transaksi/:id" element={<TransaksiPage />} />
