@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { dayKey, formatNumber, formatTime, shortDate } from '../lib/format';
+import { useAuth } from '../lib/auth';
+import { useMembers } from '../lib/household';
 import type { Transaction } from '../lib/types';
 import { Icon, iconColor, tint } from './Icon';
 
@@ -20,6 +22,15 @@ export function TxRow({
   const when = new Date(tx.occurredAt);
   const isToday = dayKey(when) === dayKey(new Date());
   const dateLabel = showDate && !isToday ? `${shortDate(when)}${showTime ? `, ${formatTime(when)}` : ''}` : showTime ? formatTime(when) : '';
+
+  const { me } = useAuth();
+  const members = useMembers();
+  // Nama pencatat hanya ditampilkan bila rumah tangga dipakai lebih dari satu orang —
+  // di rumah tangga tunggal label itu hanya jadi gangguan yang berulang di setiap baris.
+  const showAuthor = (members.data?.length ?? 0) > 1;
+  const isMine = !tx.createdBy.id || tx.createdBy.id === me?.user.id;
+  // Nama depan saja supaya kolom kanan tetap sempit.
+  const authorName = isMine ? 'Kamu' : tx.createdBy.name.trim().split(' ')[0];
   return (
     <Link
       to={`/transaksi/${tx.id}`}
@@ -48,7 +59,17 @@ export function TxRow({
           </span>
         )}
       </span>
-      <span className="whitespace-nowrap font-display text-[15px] font-bold">−Rp {formatNumber(tx.amount)}</span>
+      <span className="flex shrink-0 flex-col items-end gap-0.5">
+        <span className="whitespace-nowrap font-display text-[15px] font-bold">−Rp {formatNumber(tx.amount)}</span>
+        {showAuthor && (
+          <span
+            className={`max-w-[88px] truncate text-[11px] font-semibold ${isMine ? 'text-muted' : 'text-primary-strong'}`}
+            title={isMine ? 'Dicatat olehmu' : `Dicatat oleh ${tx.createdBy.name}`}
+          >
+            {authorName}
+          </span>
+        )}
+      </span>
     </Link>
   );
 }

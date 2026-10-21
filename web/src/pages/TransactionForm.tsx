@@ -2,6 +2,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon, iconColor, tint } from '../components/Icon';
 import { NewCategorySheet } from '../components/NewCategorySheet';
+import { useAuth } from '../lib/auth';
 import { formatNumber, toLocalInput } from '../lib/format';
 import { queueDelete, queueUpsert, settle } from '../lib/offline';
 import { byUsage, useBudgets, useCategories, useNoteSuggestions, useWallets } from '../lib/queries';
@@ -25,6 +26,8 @@ export interface TransactionFormInitial {
   walletId: string;
   occurredAt: string;
   note: string | null;
+  /** Siapa yang mencatat; hanya terisi saat mengubah transaksi yang sudah tersimpan. */
+  createdBy?: { id: string; name: string };
 }
 
 /** Hitung ekspresi keypad sederhana: "20000+5000-1000" → 24000. */
@@ -62,6 +65,7 @@ function findRoot(categories: Category[], categoryId: string) {
 /** Layar catat & ubah pengeluaran (PRD 5.1, mockup layar 04 & 06). */
 export function TransactionForm({ initial, onDeleted }: { initial?: TransactionFormInitial; onDeleted?: () => void }) {
   const navigate = useNavigate();
+  const { me } = useAuth();
   const isEdit = !!initial;
   const categories = useCategories();
   const wallets = useWallets();
@@ -228,6 +232,15 @@ export function TransactionForm({ initial, onDeleted }: { initial?: TransactionF
           <span className="w-11" />
         )}
       </header>
+
+      {isEdit && initial?.createdBy && (
+        <p className="-mt-1 text-center text-xs text-muted">
+          Dicatat oleh{' '}
+          <span className="font-semibold text-ink">
+            {initial.createdBy.id === me?.user.id ? 'kamu' : initial.createdBy.name}
+          </span>
+        </p>
+      )}
 
       <div className="flex flex-col items-center gap-0.5 py-1">
         <span className="text-[13px] text-muted">Nominal</span>

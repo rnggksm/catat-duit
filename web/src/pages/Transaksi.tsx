@@ -23,7 +23,7 @@ export function TransaksiPage() {
     initial = { id, ...pending.data, note: pending.data.note ?? null };
   } else if (server.data) {
     const t = server.data;
-    initial = { id: t.id, amount: t.amount, categoryId: t.category.id, walletId: t.wallet.id, occurredAt: t.occurredAt, note: t.note };
+    initial = { id: t.id, amount: t.amount, categoryId: t.category.id, walletId: t.wallet.id, occurredAt: t.occurredAt, note: t.note, createdBy: t.createdBy };
   }
 
   if (initial) return <TransactionForm key={id} initial={initial} />;
