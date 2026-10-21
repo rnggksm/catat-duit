@@ -23,6 +23,12 @@ export class HouseholdController {
     return this.members.list(user.householdId);
   }
 
+  @Delete('members/:userId')
+  @Roles('OWNER')
+  removeMember(@CurrentUser() user: AuthUser, @Param('userId', ParseUUIDPipe) userId: string) {
+    return this.members.remove(user.householdId, user.userId, userId);
+  }
+
   @Post('invites')
   @Roles('OWNER')
   createInvite(@CurrentUser() user: AuthUser, @Body() dto: CreateInviteDto) {

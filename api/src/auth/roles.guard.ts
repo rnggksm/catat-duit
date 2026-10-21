@@ -10,7 +10,10 @@ export const ROLES_KEY = 'roles';
 /**
  * Batasi handler ke peran tertentu, mis. `@Roles('OWNER')`.
  * Wajib dipasang SETELAH AuthGuard karena membaca `req.user` hasil verifikasi token.
- * Handler tanpa dekorator ini hanya dicek login, tidak dicek peran.
+ *
+ * Guard ini SELALU memastikan pemanggil masih anggota rumah tangga yang diklaim token-nya —
+ * termasuk pada handler tanpa `@Roles` — supaya anggota yang sudah dikeluarkan langsung
+ * kehilangan akses, tidak menunggu access token 15 menit habis.
  */
 export const Roles = (...roles: MemberRole[]) => SetMetadata(ROLES_KEY, roles);
 
@@ -26,7 +29,6 @@ export class RolesGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (!required?.length) return true;
 
     const req = context.switchToHttp().getRequest<Request & { user?: AuthUser }>();
     const user = req.user;
@@ -39,6 +41,7 @@ export class RolesGuard implements CanActivate {
       select: { role: true },
     });
     if (!membership) throw new ForbiddenException('Kamu bukan anggota rumah tangga ini');
+    if (!required?.length) return true;
     if (!required.includes(membership.role)) {
       throw new ForbiddenException('Hanya pemilik rumah tangga yang bisa melakukan ini');
     }
