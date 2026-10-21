@@ -3,15 +3,25 @@ import { AuthGuard, AuthUser, CurrentUser } from '../auth/auth.guard';
 import { Roles, RolesGuard } from '../auth/roles.guard';
 import { CreateInviteDto } from './household.dto';
 import { InvitesService } from './invites.service';
+import { MembersService } from './members.service';
 
 /**
  * Pengelolaan household: anggota dan undangan.
  * Semua route di sini butuh login; route yang mengubah data menambah `@Roles('OWNER')`.
+ * Route baca tanpa `@Roles` sengaja terbuka untuk semua anggota.
  */
 @Controller('household')
 @UseGuards(AuthGuard, RolesGuard)
 export class HouseholdController {
-  constructor(private readonly invites: InvitesService) {}
+  constructor(
+    private readonly invites: InvitesService,
+    private readonly members: MembersService,
+  ) {}
+
+  @Get('members')
+  listMembers(@CurrentUser() user: AuthUser) {
+    return this.members.list(user.householdId);
+  }
 
   @Post('invites')
   @Roles('OWNER')
