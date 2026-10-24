@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { Emphasis } from '../components/Emphasis';
 import { Icon } from '../components/Icon';
 import { formatRupiah, rangeLabelFromIso } from '../lib/format';
 import { useInsights, useSetInsightStatus } from '../lib/queries';
@@ -34,7 +35,9 @@ function InsightCard({ insight, offset }: { insight: Insight; offset: number }) 
         </div>
         {trying && <span className="shrink-0 rounded-full bg-primary-soft px-2.5 py-1 text-[11px] font-bold text-primary-strong">Sedang dicoba</span>}
       </div>
-      <p className="text-sm leading-relaxed text-[#4F4A5C]">{insight.message}</p>
+      <p className="text-sm leading-relaxed text-[#4F4A5C]">
+        <Emphasis text={insight.message} />
+      </p>
       {insight.potentialSaving > 0 && (
         <span className="flex items-center gap-1.5 self-start rounded-full bg-[#DFF3EA] px-3 py-1.5 text-[13px] font-bold text-[#17704A]">
           <Icon name="piggy" size={16} />
@@ -147,7 +150,9 @@ export function HematPage() {
                 </span>
                 <span className="flex flex-col gap-0.5">
                   <span className="text-sm font-bold">{f.title}</span>
-                  <span className="text-[13px] leading-relaxed text-[#4F4A5C]">{f.message}</span>
+                  <span className="text-[13px] leading-relaxed text-[#4F4A5C]">
+                    <Emphasis text={f.message} />
+                  </span>
                 </span>
               </div>
             );
